@@ -1,136 +1,140 @@
+// TŁO I RESPONSYWNOŚĆ
 let tło;
-let tłoRatio;
-let canvasRatio;
-let tłoHeight;
-let tłoWidth;
-let xTła;
+let tłoRatio;       // Proporcje obrazka tła
+let canvasRatio;    // Proporcje ekranu
+let tłoHeight;      // Wyliczona wysokość tła
+let tłoWidth;       // Wyliczona szerokość tła
+let xTła;           // Przesunięcie poziome tła (centrowanie)
 
-let stage1 = 0; //usunąć potem
+// RAMKA I PRZEWIJANIE (SCROLL) 
+let page;           // Bufor graficzny dla głównej strony (scrollowanej)
+// Bufory dla poszczególnych etapów gry:
+let syt1page, lvl1page, dzień41page, dzień42page;
+let dzień42wynik11page, dzień42wynik12page, dzień42wynik21page, dzień42wynik22page;
+let wynik1page, wynik2page, wynik3page;
 
-//RAMKA
-let page;       
-let scrollY = 0;
-let frameH = 1;
-let frameW = 1;
+let scrollY = 0;    // Aktualna pozycja przewijania
+let frameH = 1;     // Wysokość ramki wyświetlania
+let frameW = 1;     // Szerokość ramki wyświetlania
 let dragging = false;
-let scrollMax = 0;
+let scrollMax = 0;  // Maksymalna wartość przewijania dla danej strony
 let lastMouseY;
-let frameX;
-let frameY;
-let scrolling = 'off';
+let frameX;         // Pozycja X ramki
+let frameY;         // Pozycja Y ramki
+let scrolling = 'off'; // Czy przewijanie jest aktywne
 
-//START
+// EKRAN STARTOWY
 let startH;
 let startW;
 let startRatio;
-let pStartW;
+let pStartW;        // Wymiary przycisku start
 let pStartH;
 let pStartX;
 let pStartY;
 
-// STRONA NAZYWANIA POSTACI
-let nameInputs = [];
+// EKRAN TWORZENIA POSTACI
+let nameInputs = []; // Pola tekstowe na imiona
 let activeInput;
-let toggles = [
-  {ona: false, on: false, ono: false}, // kolumna 0
-  {ona: false, on: false, ono: false}, // kolumna 1
-  {ona: false, on: false, ono: false}  // kolumna 2
+let toggles = [      // Stany przełączników zaimków
+  {ona: false, on: false, ono: false}, // kolumna 0 (Osoba 1)
+  {ona: false, on: false, ono: false}, // kolumna 1 (Osoba 2)
+  {ona: false, on: false, ono: false}  // kolumna 2 (Osoba 3)
 ];
+let buttonPositions = []; // Pozycje przycisków do wykrywania kliknięć
+// Zmienne przechowujące dane gracza:
+let imie1, imie2, imie3;
+let zaimki1, zaimki2, zaimki3;
+let nodata; // Flaga błędu (brak wpisanych danych)
 
-let buttonPositions = [];
-let imie1;
-let imie2;
-let imie3;
-let zaimki1;
-let zaimki2;
-let zaimki3;
-let nodata;
-
-//WSTĘP
+// LOGIKA GRY (WSTĘP I ETAPY)
 let wstępW;
 let wstępH;
-let doonce = 0;
-let Stage = -2; 
+let doonce = 0;     // Flaga wykonania kodu tylko raz przy wejściu w etap
+let Stage = -2;     // Główny licznik etapu gry (-2 to start)
 let lastClickTime = -3000;
 let osoba1Ratio;
 let liniaRatio;
 
 //SYTUACJA 1
-let doonce1 = 0;
+let doonce1 = 0; // Dodatkowa flaga "doonce" dla specyficznych sytuacji
 
-//SYTUACJA2 = LVL1
+// SYTUACJA 2 / LVL 1
 let offsetY = 0;
 let stresY = 380;
-let pkt = 40;
-let myśli = 0;
-let skalaStres = 0;
-let click = 0;
-let wyb = 0;
-let startstres = 45;
+let pkt = 40;       // Punkty zasobów
+let myśli = 0;      // Poziom myśli (0-100)
+let skalaStres = 0; // Poziom stresu (0-100)
+let click = 0;      // możliwość kliknięcia w ekran, aby przejść dalej (0=zablokowana)
+let wyb = 0;        // Wybór gracza (1 lub 2)
+let startstres = 45; // Poziom początkowy dla danej sceny
 let startmyśli = 40;
 let kartyRatio;
-let warnings = false;
-let zmianaStage = 0;
+let warnings = false; // Czy pokazać ostrzeżenia o wysokim stresie
+let zmianaStage = 0;  // Podetapy wewnątrz tutoriala
 
 
-//KARTA ODDECH
-let oddechStage=0;
+// MINI-GRA: KARTA ODDECH
+let oddechStage = 0;
 let startTime;
-let cycleCount = 0;
-let animDone = false;
-let pierwszyraz=0;
+let cycleCount = 0;   // Licznik cykli oddechowych
+let animDone = false; // Czy animacja zakończona
+let pierwszyraz = 0;  // Czy karta użyta pierwszy raz (koszt punktów)
 
-//KARTA MYŚLI
+// MINI-GRA: KARTA MYŚLI
 let mysliStage = 0;
-let inputMysli; 
-let wpisaneMysli = [];
+let inputMysli;       // Input do wpisywania myśli
+let wpisaneMysli = []; // Tablica obiektów myśli
+// Granice obszaru, w którym latają myśli:
 const MIN_X_AREA = 0.108;
 const MAX_X_AREA = 0.883;
 const MIN_Y_AREA = 0.274;
 const MAX_Y_AREA = 0.584;
-let firstTime = 1;
-let czasZmianyStanu; 
-const CZAS_CZEKANIA_KLATKI = 5 * 60;
-const CZAS_ZANIKANIA_KLATKI = 5 * 60;
-let alphaMysli = 255;
+let firstTime = 1;    // Czy instrukcja wyświetlana pierwszy raz
+let czasZmianyStanu;
+const CZAS_CZEKANIA_KLATKI = 5 * 60; // Czas wyświetlania przed zanikaniem
+const CZAS_ZANIKANIA_KLATKI = 5 * 60; // Czas animacji zanikania
+let alphaMysli = 255; // Przezroczystość tekstów
 
-//KARTA ZMYSŁY
+// MINI-GRA: KARTA ZMYSŁY
 let zmyslyStage = 0;
+// Flagi zaliczenia poszczególnych zmysłów:
 let wzrokdone = false;
 let sluchdone = false;
 let zapachdone = false;
 let dotykdone = false;
 
-//KARTA STOP
+// MINI-GRA: KARTA STOP
 let stopStage = 0;
-let shapes = [];
+let shapes = [];      // Tablica kształtów do policzenia
 let shapesize;
 let kolory;
-let ilePomarańczowych = 0;
-let inputStop;
-let ilość;
-let błąd;
+let ilePomarańczowych = 0; // Prawidłowa odpowiedź
+let inputStop;        // Input na odpowiedź gracza
+let ilość;            // Wartość wpisana
+let błąd;             // Czy gracz się pomylił
 
-//KARTY
-let wybórKarty = false;
-let doKarty=false;
+// ZARZĄDZANIE KARTAMI
+let wybórKarty = false; // Czy menu wyboru kart jest aktywne
+let doKarty = false;    // Czy karta została wybrana
 let dooddech = false;
 let dozmysły = false;
 let domyśli = false;
 let dostop = false;
 let kartyStage = 1;
 
-//WZROST STRESU I MYŚLI
+// WZROST STRESU I MYŚLI
 let stresadded;
-let S = 2;
-let M = 5;
-let L = 7;
+let S = 2; // Mały przyrost (Small)
+let M = 5; // Średni przyrost (Medium)
+let L = 7; // Duży przyrost (Large)
 
-//WYNIK
-let wynik=0;
-let wybnow=0;
+// WYNIK KOŃCOWY
+let wynik = 0;
+let wybnow = 0;
 
+// ŁADOWANIE ZASOBÓW
 function preload() {
+  // Obrazy tła i interfejsu
   tło = loadImage('tło.jpg');
   start = loadImage('start.png');
   osobyStrona = loadImage('osobyStrona.png');
@@ -138,6 +142,8 @@ function preload() {
   pStart1 = loadImage('przyciskStart1.png');
   pStart2 = loadImage('przyciskStart2.png');
   linia = loadImage('linia.png');
+  
+  // Elementy fabularne i postacie
   wstęp = loadImage('wstęp.png');
   syt1 = loadImage('syt1.png');
   info1 = loadImage('info1.png');
@@ -145,13 +151,19 @@ function preload() {
   osoba1 = loadImage('osoba1.png');
   osoba2 = loadImage('osoba2.png');
   osoba3 = loadImage('osoba3.png');
+  
+  // Elementy interfejsu wyboru płci/zaimków
   on1 = loadImage('on1.png');
   on2 = loadImage('on2.png');
   ona1 = loadImage('ona1.png');
   ona2 = loadImage('ona2.png');
   ono1 = loadImage('ono1.png');
   ono2 = loadImage('ono2.png');
+  
+  // Czcionka
   Neucha = loadFont('Neucha-Regular.ttf');
+  
+  // UI Stresu i Myśli
   streslvl = loadImage('streslvl.png');
   stres = loadImage('stres.png');
   strestxt = loadImage('strestxt.png');
@@ -165,6 +177,8 @@ function preload() {
   myśli7 = loadImage('myśli7.png');
   myśli8 = loadImage('myśli8.png');
   myśli9 = loadImage('myśli9.png');
+  
+  // Grafiki poziomów i dymki informacyjne
   lvl1 = loadImage('lvl1.png');
   lvl1Koniec = loadImage('lvl1_koniec.png');
   lvl1odp2 = loadImage('lvl1_odp2.png');
@@ -176,6 +190,8 @@ function preload() {
   infoMyśli = loadImage('infoMyśli.png');
   infoStres = loadImage('infostres.png');
   info4 = loadImage('info4.png');
+  
+  // Wybory i wyniki
   syt2wyb1 = loadImage('syt2wyb1.png');
   syt2wyb2 = loadImage('syt2wyb2.png');
   lvl1wynik1 = loadImage('lvl1wynik1.png');
@@ -189,6 +205,8 @@ function preload() {
   x15 = loadImage('x15.png');
   x2 = loadImage('x2.png');
   warning = loadImage('warning.png');
+  
+  // Karty i mini-gry
   karty1 = loadImage('karty.png');
   mysli = loadImage('myśli.png');
   oddech = loadImage('oddech.png');
@@ -216,6 +234,8 @@ function preload() {
   osoba12 = loadImage('osoba12.png');
   osoba22 = loadImage('osoba22.png');
   osoba32 = loadImage('osoba32.png');
+  
+  // Ostatnia sytuacja i zakończenia
   dzień41 = loadImage('dzień4.1.png');
   dzień42 = loadImage('dzień4_2.png');
   dzień42odp1 = loadImage('dzień4_2_odp1.png');
@@ -238,6 +258,7 @@ function preload() {
 function setup() {
   createCanvas(windowWidth,windowHeight);
   
+  // Inicjalizacja pól do wpisywania imion
   for (let i = 0; i < 3; i++) {
     let inp = createInput();
     inp.attribute("placeholder", "Tu wpisz imię");
@@ -249,6 +270,8 @@ function setup() {
 }
   wstępW = wstęp.width;
   wstępH = wstęp.height;
+  
+  // Tworzenie buforów graficznych (wirtualnych stron) do przewijania
   page = createGraphics(wstępW, 10000);
   syt1page = createGraphics(wstępW, 10000);
   lvl1page = createGraphics(wstępW, 10000);
@@ -262,16 +285,10 @@ function setup() {
   wynik2page = createGraphics(wstępW, 10000);
   wynik3page = createGraphics(wstępW, 10000);
 
-  //WSTĘP
+  // Wstępne rysowanie obrazków na buforach
   page.image(wstęp, 0, 30, wstępW, wstępH);
-  
-  //SYTUACJA 1
   syt1page.image(syt1, 0, 30);
-  
-  //LVL1
   lvl1page.image(lvl1, 0, 30);
-  
-  //Kolejne lvl
   dzień41page.image(dzień41, 0, 30);
   dzień42page.image(dzień42, 0, 30);
   dzień42wynik11page.image(dzień42wynik11,0,30);
@@ -282,8 +299,7 @@ function setup() {
   wynik2page.image(wynik2,0,30);
   wynik3page.image(wynik3,0,30);
   
-  
-  //Karty
+  // Konfiguracja inputów dla mini-gier (ukryte na starcie)
   inputMysli = createInput('');
   inputMysli.hide();
   inputMysli.style('background-color', '#F5EAD0');
@@ -303,12 +319,14 @@ function setup() {
   inputStop.attribute('placeholder', 'Wpisz ilość');
 }
 
+// PĘTLA GŁÓWNA
+
 function draw() {
   background(255,250,238);
   noStroke();
   fill(0);
   
-  //STRES
+  // Mapowanie wartości stresu na pozycję paska
   stresY = map(skalaStres, 0, 100, 380, 0);
   
   //TŁO
@@ -334,10 +352,10 @@ function draw() {
   frameX = xTła+150/1280*tłoWidth;
   frameY = 140/832*tłoHeight;
   
-  //STRONA STARTOWA
+  //ETAPY GRY
   
   if (Stage === -2){
-    
+    // Obliczanie skalowania ekranu startowego
     startRatio = start.width/start.height;
     
     if (canvasRatio > startRatio) {
@@ -353,6 +371,7 @@ function draw() {
     image(start,xStart,0,startW,startH);
     image(kartyStart, -0.1*startW,0.25*startH,startH*kartyRatio,startH);
     
+    // Rysowanie przycisku start z efektem hover
     pStartW = startW * 0.3;
     pStartH = pStartW / (pStart1.width / pStart1.height);
     pStartX = (width - pStartW) / 2;
@@ -371,6 +390,7 @@ function draw() {
   if (Stage === -1){
     image(osobyStrona, xTła, 0, tłoWidth, tłoHeight)
     
+  // Ustawienie pozycji inputów
   let boxW = 0.12 * tłoWidth;
   let boxH = 0.06 * tłoHeight;
 
@@ -388,34 +408,35 @@ function draw() {
   for (let i = 0; i < 3; i++) {
     let [bx, by] = positions[i];
 
-    // ustaw pozycję i wielkość inputa (niewidocznego)
     nameInputs[i].position(bx, by);
     nameInputs[i].size(boxW, boxH);
 
+    // Pobieranie wartości z inputów
     let val = nameInputs[i].value();
   if (i === 0) imie1 = val;
   if (i === 1) imie2 = val;
   if (i === 2) imie3 = val;
   }
+    
+  // Rysowanie przycisków zaimków (ona/on/ono)
   let przyciskRatio = on1.width / on1.height;
-  let przyciskW = boxW; // Ustawia szerokość przycisku na 70% szerokości inputa
+  let przyciskW = boxW; 
   let przyciskH = przyciskW / przyciskRatio;
-  let przyciskMargin = boxH * 0.4; // Margines między inputem a przyciskami
+  let przyciskMargin = boxH * 0.4; 
 
   for (let i = 0; i < 3; i++) {
     let [bx, by] = positions[i];
 
-    // Pozycje dla przycisków pod inputem
     let przyciskX = bx + (boxW - przyciskW) / 2;
     let przyciskY = by + boxH + przyciskMargin;
     
+    // Zapisanie pozycji przycisków do obsługi kliknięć
     buttonPositions[i] = {
     on: [przyciskX, przyciskY + przyciskH + przyciskH*0.2, przyciskW, przyciskH],
     ona: [przyciskX, przyciskY, przyciskW, przyciskH],
     ono: [przyciskX, przyciskY + 2*(przyciskH + przyciskH*0.2), przyciskW, przyciskH]
   };
 
-    // rysujemy przyciski w zależności od toggles dla kolumny i
   image(toggles[i].ona ? ona2 : ona1, przyciskX, przyciskY, przyciskW, przyciskH);
   image(toggles[i].on ? on2 : on1, przyciskX, przyciskY + przyciskH + przyciskH*0.2, przyciskW, przyciskH);
   image(toggles[i].ono ? ono2 : ono1, przyciskX, przyciskY + 2*(przyciskH + przyciskH*0.2), przyciskW, przyciskH);
@@ -424,27 +445,29 @@ function draw() {
       text("Podaj imiona i wybierz zaimki!", xTła+0.5*tłoWidth, 0.542*tłoWidth);
     }
 } else {
-  // gdy wyjdziemy ze Stage -1, chowamy inputy
+  // Ukrycie inputów gdy nie jesteśmy na etapie -1
   for (let inp of nameInputs) {
-    inp.position(-1000, -1000); // przesunięcie poza ekran
+    inp.position(-1000, -1000); 
   }
 
   }
   
-  //WSTĘP
+  // STAGE 0-13: WSTĘP FABULARNY
   
   if (Stage>=0 && Stage<=13){
     if (doonce===0 && Stage===0){
-      scrollY = -950;
+      scrollY = -950; // Ustawienie początkowego scrolla
     }
     liniaRatio = linia.width/linia.height;
-    image(tło, xTła, 0, tłoWidth, tłoHeight);  
+    image(tło, xTła, 0, tłoWidth, tłoHeight);
+    // Wyświetlanie scrollowanej strony w ramce
     image(page, frameX, frameY, frameW, frameH, 0, scrollY,             wstępW,wstępW*frameH/frameW);
+    // Rysowanie linii maskującej/ozdobnej
     image(linia, frameX, frameY-frameW/liniaRatio/2, frameW, frameW/liniaRatio);
     
   }
   
-  // SYTUACJA 1
+  // STAGE 14-26: SYTUACJA 1
   
   if (Stage>13 && Stage<26){
     if (Stage===14){
@@ -457,16 +480,20 @@ function draw() {
 
   }
   
-  //SYTUACJA 2
+  // STAGE 25+: POKAZANIE UI STRESU
   if (Stage===25){
     if (doonce1===0){
     scrollY = -900;
+      // Kopiowanie paska stresu do zmiennej pomocniczej dla maskowania
     scaledstreslvl = createImage(stres.width,stres.height);
     scaledstreslvl.copy(streslvl, 0, 0, streslvl.width, streslvl.height, 0, stresY, stres.width, stres.height+50);
     doonce1++;
     }
   }
+  
+  // GŁÓWNA PĘTLA UI (STRES, MYŚLI, PUNKTY) OD STAGE 26
   if (Stage > 25){
+    // Aktualizacja wizualizacji paska stresu
     let stres1;
     if (skalaStres != stres1){
       scaledstreslvl = createImage(stres.width,stres.height);
@@ -475,12 +502,16 @@ function draw() {
     }
     image(tło, xTła, 0, tłoWidth, tłoHeight);
     
+    // Tła dla konkretnych zakończeń poziomó
     if ((Stage >= 48 && Stage <=50)||(Stage===58)||(Stage===81)||(Stage===114)){ 
       image(lvl1Koniec,xTła, 0, tłoWidth, tłoHeight);
     }
+    
+    // GENEROWANIE TEKSTÓW WYNIKOWYCH (DYNAMICZNE IMIONA)
     if (Stage===115){
     if (wynik===1 || wynik===0){
       if(doonce===0){
+        // Wypisywanie imion i zaimków na buforze wynikowym (tylko raz)
         wynik1page.textSize(40);
         wynik1page.textFont('Verdana');
         let w1 = wynik1page.textWidth(imie1);
@@ -556,7 +587,7 @@ function draw() {
     }
   }
     
-    
+    // RYSOWANIE STRESU, PUNKTÓW, MYŚLI
     let stresRatio = stres.width/stres.height;
     let strestxtRatio = strestxt.width/strestxt.height;
     let punktyRatio = punkty.width/punkty.height;
@@ -565,6 +596,7 @@ function draw() {
     image(lvl1Koniec,xTła, 0, tłoWidth, tłoHeight);
   }
     
+    // Pasek stresu
     image(stres,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stresRatio, 0.25*tłoHeight )
     scaledstreslvl.mask(stres);
 image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stresRatio, 0.25*tłoHeight);
@@ -576,11 +608,14 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     } else{
       text(skalaStres, xTła+0.026*tłoWidth, 0.172*tłoWidth);
     }
-
+    
+    // Punkty
     image(punkty, xTła+0.866*tłoWidth,0.035*tłoHeight,0.11*tłoWidth,0.11*tłoWidth/punktyRatio)
     textFont(Neucha);
     textSize(0.025*tłoWidth);
     text(pkt,xTła+0.915*tłoWidth,0.08*tłoHeight,50);
+    
+    // Myśli
     let myśliRatio = myśli1.width/myśli1.height;
     if (myśli<=11){
       image(myśli1,0.22*tłoWidth,0.026*tłoHeight, 0.54*tłoWidth, 0.54*tłoWidth/myśliRatio);
@@ -603,7 +638,8 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     }  
     text(myśli, xTła+0.257*tłoWidth, 0.049*tłoWidth);
   }
-  
+   
+  // OSTRZEŻENIA (KIEDY MYŚLI SĄ WYSOKIE)
   if (warnings===true){
     if (myśli>50){    image(warning,xTła+0.015*tłoWidth,0.21*tłoWidth,0.048*tłoWidth,0.048*tłoWidth);
     }
@@ -612,6 +648,8 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     if (myśli>75){   image(x2,xTła+0.016*tłoWidth,0.272*tłoWidth,0.048*tłoWidth,0.048*tłoWidth);
     }
   }
+  
+  // RYSOWANIE STRON SCROLLOWANYCH DLA RÓŻNYCH ETAPÓW
   
   if ((Stage>=35 && Stage<=47) || (Stage>=51 && Stage<55) || (Stage>=56 && Stage<58) || (Stage>58 && Stage<79) || Stage===80){
     if (Stage===35){
@@ -666,6 +704,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
   }
 
 
+  // RYSOWANIE ETAPÓW - CO DZIEJE SIĘ PO KAŻDYM KLIKNIĘCIU
   
   //WSTĘP
   
@@ -770,7 +809,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     }
 
   
-//SYTUACJA 2
+// KOLEJNA SYTUACJA
 
   if (Stage === 14){
     scrollY = -1000;
@@ -854,13 +893,12 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     doonce++;
   }
   
-//SYTUACJA 2
   if (Stage === 26){
     let infopktRatio = infopkt.width/infopkt.height;
     image(infopkt,0.6*tłoWidth,0.025*tłoHeight,0.25*tłoWidth, 0.19*tłoWidth/infopktRatio);
     textFont('Verdana');
     textSize(0.02*tłoHeight);
-    text('Tu możesz zobaczyć swoje punkty. Więcej o nich dowiesz się gdy będą one potrzebne.',0.614*tłoWidth,0.04*tłoHeight,0.22*tłoWidth)
+    text('Tu możesz zobaczyć swoje punkty. Więcej o nich dowiesz się, gdy będą one potrzebne.',0.614*tłoWidth,0.04*tłoHeight,0.22*tłoWidth)
     if (doonce===0){
       doonce1 = 0
       doonce++
@@ -921,7 +959,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     image(info4,xTła+0.041*tłoWidth,0.5*tłoWidth,0.425*tłoWidth,0.425*tłoWidth/infoRatio);
         textSize(0.02*tłoHeight);
         if(zmianaStage===1){
-        text("Na tą historię wpływ mają 3 osoby. Zobaczysz co dzieje się u każdej z nich.",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth);
+        text("Na tę historię wpływ mają trzy osoby. Zobaczysz co dzieje się u każdej z nich.",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth);
         }
         if (zmianaStage===2){
           text("W tym momencie na problem napotyka " + imie1 + '.',xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth);
@@ -1001,13 +1039,13 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     textFont('Verdana');
     textSize(0.02*tłoHeight);
     if (Stage===43){
-    text("Możesz teraz wybrać jak dalej potoczy się historia",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth);
+    text("Możesz teraz wybrać, jak dalej potoczy się historia",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth);
     }
     if (Stage===44){
-    text("Uważaj jednak! Poziom stresu i ilość myśli wpłynie na reakcję postaci.",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth)
+    text("Uważaj jednak! Poziom stresu i ilość myśli wpłyną na reakcję postaci.",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth)
     }
     if (Stage===45){
-    text("Zróbmy eksperyment. Zobaczmy co wydarzy się przy obecnym poziomie stresu i ilości myśli.",xTła+0.136*tłoWidth,0.514*tłoWidth,0.33*tłoWidth)
+    text("Zróbmy eksperyment. Zobaczmy, co wydarzy się przy obecnym poziomie stresu i ilości myśli.",xTła+0.136*tłoWidth,0.514*tłoWidth,0.33*tłoWidth)
     }
     if (Stage===46){
     Stage=47;
@@ -1087,7 +1125,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
   image(info5,xTła+0.158*tłoWidth,0.46*tłoWidth,0.274*tłoWidth, 0.274*tłoWidth/infoRatio);
   textFont('Verdana');
   textSize(0.02*tłoHeight);
-  text("Tu widzisz o ile wzrósł stres w całej tej sytuacji", xTła+0.172*tłoWidth, 0.495*tłoWidth, 0.251*tłoWidth);
+  text("Tu widzisz, o ile wzrósł stres w całej tej sytuacji", xTła+0.172*tłoWidth, 0.495*tłoWidth, 0.251*tłoWidth);
     click = 1;
   }
   if (Stage===49){
@@ -1095,7 +1133,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     image(info5,xTła+0.37*tłoWidth,0.46*tłoWidth,0.274*tłoWidth, 0.274*tłoWidth/infoRatio);
   textFont('Verdana');
   textSize(0.02*tłoHeight);
-  text("a tu o ile wzrosła ilość myśli", xTła+0.394*tłoWidth, 0.495*tłoWidth, 0.251*tłoWidth);
+  text("a tu, o ile wzrosła ilość myśli", xTła+0.394*tłoWidth, 0.495*tłoWidth, 0.251*tłoWidth);
   }
   if (Stage===50){
     click=0;
@@ -1103,7 +1141,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     image(info6,xTła+0.597*tłoWidth,0.426*tłoWidth,0.274*tłoWidth, 0.274*tłoWidth/infoRatio);
   textFont('Verdana');
   textSize(0.02*tłoHeight);
-  text("kliknij strzałkę i wróć z powrotem do wyboru", xTła+0.612*tłoWidth, 0.447*tłoWidth, 0.24*tłoWidth);
+  text("kliknij strzałkę i wróć do wyboru", xTła+0.612*tłoWidth, 0.447*tłoWidth, 0.24*tłoWidth);
     
    if (mouseX > xTła + 0.808*tłoWidth && mouseX < xTła + 0.869*tłoWidth && mouseY > 0.512*tłoWidth && mouseY < 0.554*tłoWidth){
       let strzalkaRatio = strzalka.width / strzalka.height;
@@ -1117,7 +1155,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
   }
   if (Stage===51){
     click = 1;
-    text("Teraz wiesz co stanie się przy obecnym poziomie stresu i obecnej ilości myśli",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth)
+    text("Teraz wiesz, co stanie się przy obecnym poziomie stresu i obecnej ilości myśli",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth)
   }
   if (Stage===52){
     text("Możesz jednak wpłynąć na obie te skale",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth)
@@ -1128,7 +1166,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     textFont('Verdana');
     textSize(0.02*tłoHeight); image(info4,xTła+0.041*tłoWidth,0.47*tłoWidth,0.47*tłoWidth,0.47*tłoWidth/infoRatio);
     if (Stage===53){
-       text("Karty, które teraz widzisz przedstawiają techniki, których możesz użyć, żeby obniżyć poziom stresu i ilość myśli.",xTła+0.143*tłoWidth,0.48*tłoWidth,0.33*tłoWidth)
+       text("Karty, które teraz widzisz, przedstawiają techniki, których możesz użyć, żeby obniżyć poziom stresu i ilość myśli.",xTła+0.143*tłoWidth,0.48*tłoWidth,0.33*tłoWidth)
      }
     if (Stage===54){
        text("Tym razem użyj karty ODDECH - kliknij w nią",xTła+0.143*tłoWidth,0.495*tłoWidth,0.33*tłoWidth)
@@ -1151,7 +1189,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
   }
   if (Stage===57){
     click = 0;
-    text("Wybierz teraz tą samą opcję co poprzednio i zobacz co się zmieni. ",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth)
+    text("Wybierz teraz tę samą opcję co poprzednio i zobacz co się zmieni. ",xTła+0.136*tłoWidth,0.514*tłoWidth,0.32*tłoWidth)
     if (wyb===1){
       let sratio = syt2wyb1.height / syt2wyb1.width;
       if (mouseX > xTła + 0.205 * tłoWidth && mouseX < xTła + 0.488 * tłoWidth && mouseY > 0.394 * tłoWidth && mouseY < 0.394 * tłoWidth + 0.283 * tłoWidth*sratio){
@@ -1173,7 +1211,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     image(info6,xTła+0.597*tłoWidth,0.426*tłoWidth,0.274*tłoWidth, 0.274*tłoWidth/infoRatio);
   textFont('Verdana');
   textSize(0.02*tłoHeight);
-  text("kliknij strzałkę i wróć z powrotem do wyboru", xTła+0.612*tłoWidth, 0.447*tłoWidth, 0.24*tłoWidth);
+  text("kliknij strzałkę i wróć do wyboru", xTła+0.612*tłoWidth, 0.447*tłoWidth, 0.24*tłoWidth);
     }
   }
   if (Stage>=59 && Stage<=64 || Stage===70 && Stage<79){
@@ -1185,7 +1223,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     skalaStres=55;
     myśli=51;
     click=1;
-    text("Czy widzisz teraz jak ilość myśli wpływa na wynik przeżywanej przez postać sytuacji?",xTła+0.146*tłoWidth,0.516*tłoWidth,0.35*tłoWidth)
+    text("Czy widzisz teraz, jak ilość myśli wpływa na wynik przeżywanej przez postać sytuacji?",xTła+0.146*tłoWidth,0.516*tłoWidth,0.35*tłoWidth)
   }
   if (Stage===60){
     text("Gdy myśli jest więcej, postać zaczyna się martwić, przez co czuje się gorzej i wzrasta jej stres.",xTła+0.146*tłoWidth,0.517*tłoWidth,0.35*tłoWidth)
@@ -1235,14 +1273,14 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
 
   if (Stage===70){
     warnings = true;
-    text("Wróćmy więc do sytuacji z przed naszego eksperymentu.",xTła+0.146*tłoWidth,0.516*tłoWidth,0.35*tłoWidth)
+    text("Wróćmy więc do sytuacji sprzed naszego eksperymentu.",xTła+0.146*tłoWidth,0.516*tłoWidth,0.35*tłoWidth)
   }
   
   if (Stage===71){
     let infoRatio=info4.width/info4.height;
     textFont('Verdana');
     textSize(0.02*tłoHeight); image(info4,xTła+0.041*tłoWidth,0.472*tłoWidth,0.47*tłoWidth,0.47*tłoWidth/infoRatio);
-    text("Od teraz to Ty będziesz decydować którą kartę użyjesz.",xTła+0.143*tłoWidth,0.49*tłoWidth,0.35*tłoWidth);
+    text("Od teraz to Ty będziesz decydować, której karty użyjesz.",xTła+0.143*tłoWidth,0.49*tłoWidth,0.35*tłoWidth);
     karty();
   }
   if (Stage>=72 && Stage<=75){
@@ -1268,7 +1306,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
       image(circle1,xTła+0.219*tłoWidth,0.51*tłoWidth,0.05*tłoWidth, 0.05*tłoWidth/cratio);
       image(circle1,xTła+0.235*tłoWidth,0.575*tłoWidth,0.05*tłoWidth, 0.05*tłoWidth/cratio);
       image(info6, xTła+0.005*tłoWidth, 0.38*tłoWidth, 0.3*tłoWidth, 0.3*tłoWidth/iratio);
-      text("Tu widzisz jak zmieni się ilość myśli i stres po użyciu karty.",xTła+0.02*tłoWidth,0.4*tłoWidth,0.28*tłoWidth);
+      text("Tu widzisz, jak zmienią się ilość myśli i stres po użyciu karty.",xTła+0.02*tłoWidth,0.4*tłoWidth,0.28*tłoWidth);
       image(info6,xTła+0.51*tłoWidth,0.43*tłoWidth,0.32*tłoWidth,0.32*tłoWidth/iratio);
       text("Grając, zwracaj uwagę na te liczby na karcie STOP. Zauważysz, że przy wysokim poziomie myśli liczby mogą się na niej zmienić :)",xTła+0.523*tłoWidth,0.444*tłoWidth,0.3*tłoWidth); 
     }
@@ -1295,7 +1333,8 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
         image(syt2wyb2,xTła + 0.507 * tłoWidth,0.392 * tłoWidth, 0.278*tłoWidth, 0.278*tłoWidth*sratio) 
       }
     }
-    karty();
+    
+    karty(); //wyświetla karty
 
   }
   if (Stage===80){
@@ -1438,15 +1477,15 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
       textSize(0.02*tłoHeight);
       if (wyb===1){
       if (myśli<=50){
-        text("Ok, będzie dobrze. Macie plan. Możesz już się uspokoić. To było dużo myśli, ale czujesz się bezpieczniej, kiedy one troche ustają. Czas działać. Zaczynacie robić prezentację.", xTła+0.317*tłoWidth,0.19*tłoWidth,0.36*tłoWidth)
+        text("Ok, będzie dobrze. Macie plan. Możesz już się uspokoić. To było dużo myśli, ale czujesz się bezpieczniej, kiedy one trochę ustają. Czas działać. Zaczynacie robić prezentację.", xTła+0.317*tłoWidth,0.19*tłoWidth,0.36*tłoWidth)
       } else {
-        text("Ok, będzie dobrze. Macie plan. Możesz już się uspokoić. Ale co jak wam nie wyjdzie? Co jak wykładowca nie zrozumie? Czemu te sytuacje muszą się przytrafiać właśnie tobie? Znacie się przeciez od dawna. " + imie1 + " wie jak ważny jest dla Ciebie ten projekt. Widzieliście się przecież wczoraj! Czemu nie pamięta o waszym spotkaniu? Ale teraz czas działać. Zaczynacie robić prezentację.", xTła+0.317*tłoWidth,0.16*tłoWidth,0.36*tłoWidth)
+        text("Ok, będzie dobrze. Macie plan. Możesz już się uspokoić. Ale co jak wam nie wyjdzie? Co jak wykładowca nie zrozumie? Czemu te sytuacje muszą się przytrafiać właśnie tobie? Znacie się przecież od dawna. " + imie1 + " wie jak ważny jest dla Ciebie ten projekt. Widzieliście się przecież wczoraj! Czemu nie pamięta o waszym spotkaniu? Ale teraz czas działać. Zaczynacie robić prezentację.", xTła+0.317*tłoWidth,0.16*tłoWidth,0.36*tłoWidth)
       }
     } else if (wyb===2){
       if (myśli<=50){
-        text("Ok, będzie dobrze. Macie plan. Możesz już się uspokoić. To było dużo myśli, ale czujesz się bezpieczniej, kiedy one troche ustają. Nie masz wpływu na to co robi " + imie1 + ". Skupisz się na tym, na co wpływ masz. Kiedy myślisz jest mniej, możesz głęboko odetchnąć. Będzie co będzie, ale sobie poradzisz. ", xTła+0.317*tłoWidth,0.17*tłoWidth,0.36*tłoWidth)
+        text("Ok, będzie dobrze. Macie plan. Możesz już się uspokoić. To było dużo myśli, ale czujesz się bezpieczniej, kiedy one trochę ustają. Nie masz wpływu na to, co robi " + imie1 + ". Skupisz się na tym, na co wpływ masz. Kiedy myślisz jest mniej, możesz głęboko odetchnąć. Będzie co będzie, ale sobie poradzisz. ", xTła+0.317*tłoWidth,0.17*tłoWidth,0.36*tłoWidth)
       } else {
-        text("Ok, będzie dobrze. Macie plan. Możesz już się uspokoić. Ale co jak wam nie wyjdzie? Co jak " + imie1 + " się nie odezwie? Co jak nie zdążycie?Nie powinieneś teraz o tym myśleć. Nie masz na to wpływu. Ale czemu te sytuacje muszą się przytrafiać właśnie tobie? Znacie się przeciez od dawna. " +imie1 + " wie jak ważny jest dla Ciebie ten projekt. Widzieliście się przecież wczoraj! Czemu nie pamięta?", xTła+0.317*tłoWidth,0.16*tłoWidth,0.36*tłoWidth)
+        text("Ok, będzie dobrze. Macie plan. Możesz już się uspokoić. Ale co jak wam nie wyjdzie? Co jak " + imie1 + " się nie odezwie? Co jak nie zdążycie? Nie powinieneś teraz o tym myśleć. Nie masz na to wpływu. Ale czemu te sytuacje muszą się przytrafiać właśnie tobie? Znacie się przecież od dawna. " +imie1 + " wie jak ważny jest dla Ciebie ten projekt. Widzieliście się przecież wczoraj! Czemu nie pamięta?", xTła+0.317*tłoWidth,0.16*tłoWidth,0.36*tłoWidth)
       }
     }
   stresadded = skalaStres-startstres;
@@ -1746,7 +1785,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
   if (Stage===114){
     textFont('Verdana');
     textSize(0.02*tłoHeight);
-    text("To tyle. Nadszedł dzień prezentacji. Daliście z siebie wszstko. Zobaczmy jak z jej wynikiem czują się bohaterowie tej historii", xTła+0.33*tłoWidth,0.209*tłoWidth,0.34*tłoWidth);
+    text("To tyle. Nadszedł dzień prezentacji. Daliście z siebie wszystko. Zobaczmy, jak z jej wynikiem czują się bohaterowie tej historii", xTła+0.33*tłoWidth,0.209*tłoWidth,0.34*tłoWidth);
     if (mouseX > xTła + 0.808*tłoWidth && mouseX < xTła + 0.869*tłoWidth && mouseY > 0.512*tłoWidth && mouseY < 0.554*tłoWidth){
     let strzalkaRatio = strzalka.width / strzalka.height;
       image(strzalka,xTła + 0.808*tłoWidth, 0.512*tłoWidth, 0.061*tłoWidth, 0.061*tłoWidth/strzalkaRatio)
@@ -1795,39 +1834,8 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     text(skalaStres,xTła+0.388*tłoWidth,0.445*tłoWidth);
     text(myśli,xTła+0.577*tłoWidth,0.445*tłoWidth);
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
-  if (stage1 != Stage){
-    print(Stage);
-    stage1 = Stage;
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
+  // Przejście do minigier
   if (dooddech){
     kartaoddech();
     doKarty=false;
@@ -1845,6 +1853,7 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
     doKarty=false;
     }
   
+  // Zablokowanie stresu i myśli do max 100
   if(skalaStres>100){
     skalaStres=100;
   }
@@ -1857,39 +1866,12 @@ image(scaledstreslvl,xTła+0.02*tłoWidth,0.04*tłoHeight, 0.25*tłoHeight*stres
   rect(0,tłoHeight,tłoWidth,height-tłoHeight);
 }
 
+
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
 
 function mouseClicked(){
-  print(scrollY)//usunąć potem
-  
-  
-  // sprawdzamy czy kliknięcie było w ramce
-  if (
-    mouseX > frameX &&
-    mouseX < frameX + frameW &&
-    mouseY > frameY &&
-    mouseY < frameY + frameH
-  ) {
-    // przeliczamy współrzędne kliknięcia na poziom lvl1page
-    let xInPage = map(mouseX, frameX, frameX + frameW, 0, wstępW);
-    let yInPage = map(mouseY, frameY, frameY + frameH, scrollY, scrollY + (wstępW * frameH / frameW));
-
-    print("Dla lvl1page.text():", int(xInPage), int(yInPage));
-  }
-  let relX = (mouseX - xTła) / tłoWidth;   // odejmuję xTła, bo tło zaczyna się w xTła
-  let relY = mouseY / tłoWidth;            // tu też skaluje względem szerokości
-  print("Proporcje względem tłoWidth:", nf(relX,1,3), nf(relY,1,3));
-
-  
-  
-  
-  
-  
-  
-
-  
   
   if ((Stage===113 || Stage===115) && scrollY === scrollMax && mouseX>xTła+0.83*tłoWidth && mouseX<xTła+0.88*tłoWidth && mouseY>0.6*tłoWidth && mouseY<0.634*tłoWidth){
     Stage++;
@@ -2209,6 +2191,7 @@ function mouseClicked(){
   }
 }
 
+//opcja ponownego wejścia w fullscreen
 function keyPressed() {
   if (key === 'f') {
     fullscreen(true);
@@ -2223,6 +2206,7 @@ function mouseWheel(event) {
   return false; 
 }
 
+// Wyświetlanie kart i umożliwienie przejścia do minigry (zmienna doKarty)
 function karty(){
   if (mouseY>=0.55*tłoWidth){
     if (wybórKarty){
@@ -2257,6 +2241,8 @@ function karty(){
     image(karty1,xTła+0.13*tłoWidth,0.37*tłoWidth,0.7*tłoWidth,0.7*tłoWidth/kartyRatio);
   }
 }
+
+// MINIGRA ODDECH
 function kartaoddech(){
   if (doonce===0 && oddechStage===0){
     oddechStage=1;
@@ -2308,21 +2294,21 @@ image(pStart1,xTła+0.41*tłoWidth,0.42*tłoWidth,0.18*tłoWidth,0.18*tłoWidth/
     }
     if (!animDone) {
       let elapsed = (millis() - startTime) / 1000.0;
-      let cycleTime = elapsed % 16;
-      cycleCount = floor(elapsed / 16);
+      let cycleTime = elapsed % 12;
+      cycleCount = floor(elapsed / 12);
 
       let minSize = 0.1 * tłoWidth;
       let maxSize = 0.4 * tłoWidth;
       let size;
       let tekst;
-      if (cycleTime < 4) {
-        size = map(cycleTime, 0, 4, minSize, maxSize);
+      if (cycleTime < 3) {
+        size = map(cycleTime, 0, 3, minSize, maxSize);
         tekst = "wdech"
-      }else if (cycleTime < 8) {
+      }else if (cycleTime < 6) {
         size = maxSize;
         tekst = "stop"
-      }else if (cycleTime < 12) {
-        size = map(cycleTime, 8, 12, maxSize, minSize);
+      }else if (cycleTime < 9) {
+        size = map(cycleTime, 6, 9, maxSize, minSize);
         tekst = "wydech"
       }else {
         size = minSize;
@@ -2359,6 +2345,8 @@ image(pStart1,xTła+0.41*tłoWidth,0.42*tłoWidth,0.18*tłoWidth,0.18*tłoWidth/
     }
   }
 }
+
+// MINIGRA MYŚLI
 function kartaMyśli(){
   if (doonce===0 && mysliStage===0){
     mysliStage=1
@@ -2407,7 +2395,7 @@ image(mysliGra2,xTła + tłoWidth/2 - 0.36*tłoWidth, 0.15*tłoWidth, 0.72*tłoW
         image(info4,xTła+0.034*tłoWidth,0.558*tłoWidth,0.425*tłoWidth,0.425*tłoWidth/iRatio);
     textFont('Verdana');
     textSize(0.02*tłoHeight);
-    text("Możesz wpisać więcej myśli lub klikąć w strzałkę, aby przejść dalej.",xTła+0.131*tłoWidth,0.572*tłoWidth,0.32*tłoWidth);
+    text("Możesz wpisać więcej myśli lub kliknąć w strzałkę, aby przejść dalej.",xTła+0.131*tłoWidth,0.572*tłoWidth,0.32*tłoWidth);
       }
       let strzalkaRatio = strzalka.width / strzalka.height;
       image(strzalka2, xTła + 0.808*tłoWidth, 0.512*tłoWidth, 0.061*tłoWidth, 0.061*tłoWidth/strzalkaRatio);
@@ -2443,7 +2431,7 @@ image(mysliGra2,xTła + tłoWidth/2 - 0.36*tłoWidth, 0.15*tłoWidth, 0.72*tłoW
     if (frameCount >= czasZmianyStanu + CZAS_CZEKANIA_KLATKI) {
       let postepZanikania = (frameCount -(czasZmianyStanu+CZAS_CZEKANIA_KLATKI)) / CZAS_ZANIKANIA_KLATKI;
     
-    alphaMysli = 255 * (1 - postepZanikania); // Obliczenie alpha (od 255 do 0)
+    alphaMysli = 255 * (1 - postepZanikania); 
 
     if (postepZanikania >= 1) {
       wpisaneMysli = [];
@@ -2470,6 +2458,8 @@ image(mysliGra2,xTła + tłoWidth/2 - 0.36*tłoWidth, 0.15*tłoWidth, 0.72*tłoW
 
   
 }
+
+// Funkcja obsługująca zatwierdzenie tekstu wpisanego w input
 function obsluzWprowadzenie() {
   let nowyTekst = inputMysli.value();
   if (nowyTekst.trim() !== "") { 
@@ -2478,6 +2468,7 @@ function obsluzWprowadzenie() {
   inputMysli.value('');
 }
 
+// Klasa reprezentująca pojedynczą, latającą chmurkę z myślą
 class Mysl {
   constructor(tekst) {
     this.tekst = tekst;
@@ -2492,6 +2483,7 @@ class Mysl {
     this.vy = random(-1, 1);
   }
 
+  // Metoda aktualizująca pozycję (animacja ruchu i odbijanie od ścian)
   move() {
     this.x += this.vx;
     this.y += this.vy;
@@ -2500,7 +2492,7 @@ class Mysl {
     const minY = MIN_Y_AREA * tłoWidth;
     const maxY = MAX_Y_AREA * tłoWidth - this.h;
     if (this.x <= minX || this.x >= maxX) {
-      this.vx *= -1; // Odwrócenie kierunku
+      this.vx *= -1; 
       this.x = constrain(this.x, minX, maxX); 
     }
     if (this.y <= minY || this.y >= maxY) {
@@ -2509,6 +2501,7 @@ class Mysl {
     }
   }
 
+  // Metoda rysująca myśl na ekranie
   display(i) {
     tint(255, i);
     image(this.img, this.x, this.y, this.w, this.h);
@@ -2529,6 +2522,7 @@ class Mysl {
   }
 }
 
+// MINIGRA ZMYSŁY
 function kartaZmysly(){
   if (doonce===0 && zmyslyStage===0){
     zmyslyStage=1
@@ -2593,6 +2587,9 @@ image(mysliGra2,xTła + tłoWidth/2 - 0.36*tłoWidth, 0.145*tłoWidth, 0.72*tło
     }
   }
     }
+
+// MINIGRA STOP
+
 function kartaStop(){
   if (doonce===0 && stopStage===0){
     animDone = false;
@@ -2650,21 +2647,21 @@ function kartaStop(){
     }
     if (!animDone) {
       let elapsed = (millis() - startTime) / 1000.0;
-      let cycleTime = elapsed % 16;
-      cycleCount = floor(elapsed / 16);
+      let cycleTime = elapsed % 12;
+      cycleCount = floor(elapsed / 12);
 
       let minSize = 0.1 * tłoWidth;
       let maxSize = 0.4 * tłoWidth;
       let size;
       let tekst;
-      if (cycleTime < 4) {
-        size = map(cycleTime, 0, 4, minSize, maxSize);
+      if (cycleTime < 3) {
+        size = map(cycleTime, 0, 3, minSize, maxSize);
         tekst = "wdech"
-      }else if (cycleTime < 8) {
+      }else if (cycleTime < 6) {
         size = maxSize;
         tekst = "stop"
-      }else if (cycleTime < 12) {
-        size = map(cycleTime, 8, 12, maxSize, minSize);
+      }else if (cycleTime < 9) {
+        size = map(cycleTime, 6, 9, maxSize, minSize);
         tekst = "wydech"
       }else {
         size = minSize;
@@ -2781,11 +2778,10 @@ function generateNonOverlappingShape() {
     x = xTła + random(0.145 * tłoWidth, 0.83 * tłoWidth);
     y = random(0.14 * tłoWidth, 0.5 * tłoWidth);
 
-    goodPos = true; // zakładamy że jest OK dopóki nie znajdziemy kolizji
-    // sprawdzamy czy nowy kształt nie nachodzi na istniejące
+    goodPos = true; 
     for (let s of shapes) {
       let d = dist(x, y, s.x, s.y);
-      if (d < shapesize+0.01*tłoWidth) { // jeśli za blisko → kolizja
+      if (d < shapesize+0.01*tłoWidth) { 
         goodPos = false;
         break;
       }
@@ -2796,24 +2792,23 @@ function generateNonOverlappingShape() {
   let strokeColor = strokeForColor(fillColor);
 
   return {
-    kolor: fillColor,     // kolor wypełnienia
-    obrys: strokeColor,   // kolor obrysu
+    kolor: fillColor,   
+    obrys: strokeColor,   
     x,
     y,
     typ: int(random(3))
   };
 }
 function strokeForColor(fillColor) {
-  // Możesz ustawić dowolne RGB
   if (red(fillColor) === 255 && green(fillColor) === 235 && blue(fillColor) === 217) {
-    return color(244, 118, 0);    // stroke dla pomarańczowego
+    return color(244, 118, 0);
   }
   if (red(fillColor) === 226 && green(fillColor) === 245 && blue(fillColor) === 255) {
-    return color(76, 152, 192);    // stroke dla niebieskiego
+    return color(76, 152, 192); 
   }
   if (red(fillColor) === 241 && green(fillColor) === 255 && blue(fillColor) === 204) {
-    return color(159, 192, 76);   // stroke dla zielonego
+    return color(159, 192, 76); 
   }
 
-  return color(0); // fallback
+  return color(0);
 }
